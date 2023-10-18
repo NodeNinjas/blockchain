@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "./ExcellenceBadge.sol";
 import "./ExperienceBadge.sol";
@@ -34,8 +34,8 @@ contract FreelancePlatform {
     ExcellenceBadge public excellenceBadge;
     LoyaltyBadge public loyaltyBadge;
     TrustworthyBadge public trustworthyBadge;
-    
-    uint256 public nextTokenId = 0;
+
+    address public platform;
     
     constructor(
         address _experienceBadge,
@@ -47,6 +47,8 @@ contract FreelancePlatform {
         excellenceBadge = ExcellenceBadge(_excellenceBadge);
         loyaltyBadge = LoyaltyBadge(_loyaltyBadge);
         trustworthyBadge = TrustworthyBadge(_trustworthyBadge);
+
+        platform = msg.sender;
     }
     
     function postJob(uint256 _budget) public returns (uint256) {
@@ -95,28 +97,33 @@ contract FreelancePlatform {
             payable(job.freelancer).transfer(freelancerPayment);
             // Remaining 10% stays with the contract (platform fee)
         }
-        // checkAndAwardBadges(_jobId);
     }
     
-    function checkAndAwardBadges(uint256 _jobId) internal {
-        Job storage job = jobs[_jobId];
+    function checkAndAwardBadges(address freelancer, address client) public {
+        require(msg.sender == platform, "only Platform can award badges");
+
         // Freelancer Badges
-        if (freelancerJobCount[job.freelancer] == 1) {
-            experienceBadge.mint(job.freelancer);
+        if (freelancerJobCount[freelancer] >= 2) {
+            experienceBadge.mint(freelancer);
         }
 
-        // Need to change
-        // if (freelancerReviewSum[job.freelancer] / freelancerJobCount[job.freelancer] > 8) {
-        //     excellenceBadge.mint(job.freelancer);
-        // }
+        if (
+            (freelancerJobCount[freelancer] > 0) && 
+            (freelancerReviewSum[freelancer] / freelancerJobCount[freelancer] > 8)
+        ) {
+            excellenceBadge.mint(freelancer);
+        }
+
         // Client Badges
-        if (clientJobCount[job.client] == 1) {
-            loyaltyBadge.mint(job.client);
+        if (clientJobCount[client] >= 2) {
+            loyaltyBadge.mint(client);
         }
 
-        // Need to change
-        // if (clientReviewSum[job.client] / clientJobCount[job.client] > 8) {
-        //     trustworthyBadge.mint(job.client);
-        // }
+        if (
+            (clientJobCount[client] > 0) && 
+            (clientReviewSum[client] / clientJobCount[client] > 8)
+        ) {
+            trustworthyBadge.mint(client);
+        }
     }
 }

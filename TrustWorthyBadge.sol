@@ -12,7 +12,6 @@ contract TrustworthyBadge is ERC721 {
     }
 
     function mint(address to) external {
-        require(msg.sender == admin, "only admin can mint");
         _mint(to, nextTokenId);
         nextTokenId++;
     }
